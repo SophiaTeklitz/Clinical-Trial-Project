@@ -44,7 +44,7 @@ simTrialData <- function(n, recruit_period, p)
   
   # Simulate events from binomial distribution with respective probabilities
   # of events for control and treatment arms
-  data$event <- rweibull(n, shape = lambda[data$trt+1], scale = 0.6, p[data$trt+1])
+  data$event <- rweibull(n, shape = lambda[data$trt+1], scale = 0.6)
   
   # Return the simulated trial data.
   return(data)
