@@ -46,7 +46,20 @@ simTrialData <- function(n, recruit_period, p)
   
   # Simulate events from binomial distribution with respective probabilities
   # of events for control and treatment arms
-  data$event <- rweibull(n, shape = lambda[data$trt+1], scale = 0.6)
+  data$time <- ((-log(runif(n))/(lambda[data$trt+1])))^(1/0.6)
+  
+  for (i in 1:n) {
+    dropout <- runif(1)
+    
+    if (dropout < 0.03) {
+      data$censor_time[i] <- runif(1, 0, 1825)
+    }
+    else {
+      data$censor_time[i] <- runif(1, 1825, 2920)
+    }
+  }
+  
+  data$event <- min(data$time, data$event_time)
   
   # Return the simulated trial data.
   return(data)
@@ -240,9 +253,10 @@ lambda0 <- -log(0.901)/(5^0.6)
 
 # The event probability for Na140 arm
 lambda1    <- -log(0.934)/(5^0.6)
+lambda1 <- lambda0*0.655
 
 # vector of event probabilities
-lambda     <- c(p0, p1)
+lambda     <- c(lambda0, lambda1)
 
 ## scratch work solving for survival time
 
