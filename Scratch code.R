@@ -44,7 +44,7 @@ simTrialData <- function(n, recruit_period, p)
   
   # Simulate events from binomial distribution with respective probabilities
   # of events for control and treatment arms
-  data$event <- rbinom(n, 1, p[data$trt+1])
+  data$event <- rweibull(n, shape = lambda[data$trt+1], scale = 0.6, p[data$trt+1])
   
   # Return the simulated trial data.
   return(data)
@@ -154,13 +154,13 @@ events_at_interim <- 20
 
 # event probabilities
 # Event probability in Na77 at 72 hours
-p0    <- 0.10
+lambda0    <- 0.10
 
 # The event probability for Na140 arm
-p1    <- 0.04
+lambda1    <- 0.04
 
 # vector of event probabilities
-p     <- c(p0, p1)
+lambda     <- c(p0, p1)
 
 # Decision thresholds/boundaries (alpha)
 # At final analysis
