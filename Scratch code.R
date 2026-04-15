@@ -59,7 +59,8 @@ simTrialData <- function(n, recruit_period, p)
     }
   }
   
-  data$event <- min(data$time, data$event_time)
+  data$event_time <- min(data$time, data$censor_time)
+  data$event_indicator <- ifelse(data$time < data$censor_time, 1, 0)
   
   # Return the simulated trial data.
   return(data)
