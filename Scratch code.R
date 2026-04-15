@@ -1,4 +1,6 @@
 
+library(survival)
+
 simRandomisation <- function(n)
 {
   # A sequence indicating block.
@@ -55,15 +57,20 @@ simInterimData <- function(data, events_at_interim)
   # Obtain the cumulative number of events
   data$cum_events <- cumsum(data$event)
   
-  # observation number at which interim occurs
-  data$interim_ind <- data$obs_no[min(which(data$cum_events == events_at_interim))]
-  
-  # Events at interim
-  data$event_interim <- with(data, ifelse(obs_no <= interim_ind, event, NA))
-  
-  # you can also extract the interim data set and output it separately as below
-  # data_interim <- subset(data, !is.na(data$event_interim))
-  # return(data_interim)
+  # Loop over each interim timepoint
+  for(i in seq_along(events_at_interims)){
+    
+    interim_name <- paste0("interim_ind_", i)
+    event_name   <- paste0("event_interim_", i)
+    
+    # observation number at which this interim occurs
+    interim_ind <- data$obs_no[min(which(data$cum_events == events_at_interims[i]))]
+    
+    data[[interim_name]] <- interim_ind
+    
+    # Events available at this interim (NA for participants not yet recruited)
+    data[[event_name]] <- ifelse(data$obs_no <= interim_ind, data$event, NA)
+  }
   
   return(data)
 }
@@ -137,6 +144,81 @@ analyseData <- function(data, alpha_interim, alpha_final)
   return(results)
 }
 
+analyseData <- function(data, alpha_interims, alpha_final)
+{
+  # alpha_interims is now a vector matching length of events_at_interims
+  # e.g. c(0.001, 0.005) for two interims
+  
+  n_interims <- length(alpha_interims)
+  interim_results <- list()
+  
+  for(i in 1:n_interims){
+    
+    event_col <- paste0("event_interim_", i)
+    ind_col   <- paste0("interim_ind_", i)
+    
+    interim_data <- data[!is.na(data[[event_col]]), ]
+    interim_data$event_interim <- interim_data[[event_col]]
+    interim_data$event_interim <- factor(interim_data$event_interim)
+    
+    model     <- glm(event_interim ~ trt, data = interim_data, family = "binomial")
+    conf      <- confint(model)
+    interim_p <- coef(summary(model))["trt", "Pr(>|z|)"]
+    interim_or  <- exp(coef(model)["trt"])
+    interim_lci <- exp(conf["trt", "2.5 %"])
+    interim_uci <- exp(conf["trt", "97.5 %"])
+    interim_stop <- ifelse(interim_p < alpha_interims[i], 1, 0)
+    
+    interim_results[[i]] <- data.frame(
+      interim        = i,
+      interim_time   = unique(data[[ind_col]]),
+      interim_or     = interim_or,
+      interim_lci    = interim_lci,
+      interim_uci    = interim_uci,
+      interim_p      = interim_p,
+      interim_stop   = interim_stop
+    )
+  }
+  
+  # Combine interim results
+  interim_summary <- do.call(rbind, interim_results)
+  
+  # Final analysis (only runs if not stopped early)
+    sample_size   <- nrow(data)
+    data$event    <- factor(data$event)
+    model_final   <- glm(event ~ trt, data = data, family = "binomial")
+    conf_final    <- confint(model_final)
+    final_p       <- coef(summary(model_final))["trt", "Pr(>|z|)"]
+    final_or      <- exp(coef(model_final)["trt"])
+    final_lci     <- exp(conf_final["trt", "2.5 %"])
+    final_uci     <- exp(conf_final["trt", "97.5 %"])
+    final_stop    <- ifelse(final_p < alpha_final, 1, 0)
+    # Use interim model results as final if stopped early
+    last_interim  <- interim_summary[nrow(interim_summary), ]
+    final_or      <- last_interim$interim_or
+    final_lci     <- last_interim$interim_lci
+    final_uci     <- last_interim$interim_uci
+    final_p       <- last_interim$interim_p
+    final_stop    <- last_interim$interim_stop
+  
+  stop     <- ifelse(stopped_early, 1, final_stop)
+  flipflop <- ifelse(stopped_early & final_stop == 0, 1, 0)
+  
+  results <- list(
+    interim_summary = interim_summary,
+    final_or        = final_or,
+    final_lci       = final_lci,
+    final_uci       = final_uci,
+    final_p         = final_p,
+    final_stop      = final_stop,
+    sample_size     = sample_size,
+    stop            = stop,
+    flipflop        = flipflop
+  )
+  
+  return(results)
+}
+
 
 ## Parameters from the example
 
@@ -150,17 +232,23 @@ recruit_period <- 365.25*3*584/690
 n             <- 584
 
 # The number of events at the interim: half recruitment (584/2 = 292; 292*(.1+.04)/2=20 events)
-events_at_interim <- 20
+events_at_interim <- ## number of events at the 20%, 40%, 60%, and 80% of expected events
 
 # event probabilities
 # Event probability in Na77 at 72 hours
-lambda0    <- 5/(-log(0.901)^(1/0.6))
+lambda0 <- -log(0.901)/(5^0.6)
 
 # The event probability for Na140 arm
-lambda1    <- 5/(-log(0.934)^(1/0.6))
+lambda1    <- -log(0.934)/(5^0.6)
 
 # vector of event probabilities
 lambda     <- c(p0, p1)
+
+## scratch work solving for survival time
+
+hist(((-log(runif(1000))/(lambda0*0.655)))^(1/0.6))
+
+hist(((-log(runif(1000))/(lambda0)))^(1/0.6))
 
 # Decision thresholds/boundaries (alpha)
 # At final analysis
