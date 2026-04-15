@@ -154,10 +154,10 @@ events_at_interim <- 20
 
 # event probabilities
 # Event probability in Na77 at 72 hours
-lambda0    <- 0.10
+lambda0    <- 5/(-log(0.901)^(1/0.6))
 
 # The event probability for Na140 arm
-lambda1    <- 0.04
+lambda1    <- 5/(-log(0.934)^(1/0.6))
 
 # vector of event probabilities
 lambda     <- c(p0, p1)
