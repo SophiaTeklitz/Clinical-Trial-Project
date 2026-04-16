@@ -210,9 +210,11 @@ runMultipleTrials <- function(simno, seed, n, accrual_period, followup_period,
   results_all <- do.call(rbind, lapply(multiple_trials, function(x){
     data.frame(
       interim1_p = x[["results"]][["interim_summary"]][["interim_p"]][1],
+      interim1_stop = x[["results"]][["interim_summary"]][["interim_stop"]][1],
       interim2_p = x[["results"]][["interim_summary"]][["interim_p"]][2],
+      interim2_stop = x[["results"]][["interim_summary"]][["interim_stop"]][2],
       interim3_p = x[["results"]][["interim_summary"]][["interim_p"]][3],
-      interim4_p = x[["results"]][["interim_summary"]][["interim_p"]][4],
+      interim3_stop = x[["results"]][["interim_summary"]][["interim_stop"]][3],
       final_p     = x$results$final_p,
       final_stop  = x$results$final_stop,
       sample_size = x$results$sample_size,
@@ -231,9 +233,9 @@ runMultipleTrials <- function(simno, seed, n, accrual_period, followup_period,
 }
 
 seed               <- 48376491
-n                  <- 2225
-events_at_interims <- c(39, 78, 116, 155)   # two interims
-alpha_interims     <- c(0.000005, 0.00125, 0.0084, 0.0225)
+n                  <- 2334
+events_at_interims <- c(78, 116, 155)   # two interims
+alpha_interims     <- c(0.004, 0.009, 0.016) ## the same cutoffs used by the study
 alpha_final        <- 0.0414
 
 # Weibull shape parameter
