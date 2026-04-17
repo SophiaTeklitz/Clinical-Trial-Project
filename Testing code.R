@@ -288,11 +288,48 @@ results_multi <- runMultipleTrials(
 
 results_multi$results_summary
 
+## Using O'Brien Flemming cut offs
 
+alpha_interims     <- c(0.00062, 0.00419, 0.01121) 
+alpha_final        <- 0.02058
+set.seed(seed)
+results_single <- runTrial(n, accrual_period, followup_period,
+                           shape, scale_control, scale_treatment,
+                           events_at_interims, alpha_interims, alpha_final)
 
+# Multiple trials
+results_multi <- runMultipleTrials(
+  simno = 5000, seed = seed, n = n,
+  accrual_period = accrual_period, followup_period = followup_period,
+  shape = shape, scale_control = scale_control,
+  scale_treatment = scale_treatment,
+  events_at_interims = events_at_interims,
+  alpha_interims = alpha_interims,
+  alpha_final = alpha_final
+)
 
+results_multi$results_summary
 
+## Pocock cutoffs
 
+alpha_interims     <- c(0.0097, 0.0097, 0.0097) ## the same cutoffs used by the study
+alpha_final        <- 0.0097
+set.seed(seed)
+results_single <- runTrial(n, accrual_period, followup_period,
+                           shape, scale_control, scale_treatment,
+                           events_at_interims, alpha_interims, alpha_final)
 
+# Multiple trials
+results_multi <- runMultipleTrials(
+  simno = 5000, seed = seed, n = n,
+  accrual_period = accrual_period, followup_period = followup_period,
+  shape = shape, scale_control = scale_control,
+  scale_treatment = scale_treatment,
+  events_at_interims = events_at_interims,
+  alpha_interims = alpha_interims,
+  alpha_final = alpha_final
+)
+
+results_multi$results_summary
 
 
